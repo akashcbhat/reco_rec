@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:reco_rec/screens/homescreen.dart';
 
 class Onboarding extends StatefulWidget {
-  const Onboarding({Key? key}) : super(key: key);
+  const Onboarding({super.key});
 
   @override
   State<Onboarding> createState() => _OnboardingState();
@@ -25,51 +25,42 @@ class _OnboardingState extends State<Onboarding> {
     {
       "image": 'assets/images/3.png',
       "title": 'Text to Speech Integration',
-      "description": 'Listen to the recipe instructions while cooking!',
+      "description":
+      'Listen to the recipe instructions while cooking!',
     }
   ];
 
   Color titleColor = Color(0xffEFF1F4);
   Color descColor = Color(0xff8A9199);
-  Color btnColor = Color(0xff21252C);
-  Color btnBgColor = Color(0xffF98017);
+  Color btnColor = Color(0xffEFF1F4);
+  Color btnBgColor = Color(0xFF2D3B80);
 
   int currentPage = 0;
-  late SharedPreferences _prefs;
+  PageController pageController = PageController();
 
   @override
   void initState() {
     super.initState();
-    _initPrefs();
   }
 
-  Future<void> _initPrefs() async {
-    _prefs = await SharedPreferences.getInstance();
-    bool onboardingCompleted = _prefs.getBool('onboarding_completed') ?? false;
-    if (onboardingCompleted) {
+  void onChanged(int index) {
+    setState(() {
+      currentPage = index;
+    });
+  }
+
+  Future<void> _setOnboardingSeen() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('seen', true);
+  }
+
+  void _navigateToHome() {
+    _setOnboardingSeen().then((_) {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => ImagePickerDemo()),
       );
-    }
-  }
-
-  void _completeOnboarding() async {
-    await _prefs.setBool('onboarding_completed', true);
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => ImagePickerDemo()),
-    );
-  }
-
-  void _nextPage() {
-    if (currentPage < onboardContents.length - 1) {
-      setState(() {
-        currentPage++;
-      });
-    } else {
-      _completeOnboarding();
-    }
+    });
   }
 
   @override
@@ -80,7 +71,7 @@ class _OnboardingState extends State<Onboarding> {
         backgroundColor: Color(121221),
         actions: [
           TextButton(
-            onPressed: _completeOnboarding,
+            onPressed: _navigateToHome,
             child: Padding(
               padding: const EdgeInsets.only(top: 20.0, right: 8.0),
               child: Text(
@@ -92,7 +83,7 @@ class _OnboardingState extends State<Onboarding> {
                 ),
               ),
             ),
-          ),
+          )
         ],
       ),
       body: Stack(
@@ -102,9 +93,13 @@ class _OnboardingState extends State<Onboarding> {
               return Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Image.asset(onboardContents[index]['image']),
+                  SizedBox(
+                    width: 300, // Set the desired width
+                    height: 300, // Set the desired height
+                    child: Image.asset(onboardContents[index]['image']),
+                  ),
                   const SizedBox(
-                    height: 40,
+                    height: 50,
                   ),
                   Text(
                     onboardContents[index]['title'],
@@ -139,13 +134,10 @@ class _OnboardingState extends State<Onboarding> {
                 ],
               );
             },
+            controller: pageController,
             scrollDirection: Axis.horizontal,
             itemCount: onboardContents.length,
-            onPageChanged: (index) {
-              setState(() {
-                currentPage = index;
-              });
-            },
+            onPageChanged: onChanged,
           ),
           Center(
             child: Padding(
@@ -153,37 +145,61 @@ class _OnboardingState extends State<Onboarding> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  SizedBox(
+                  (currentPage == (onboardContents.length - 1))
+                      ? SizedBox(
                     width: 335,
                     child: ElevatedButton(
-                      onPressed: _nextPage,
+                      onPressed: _navigateToHome,
                       child: Padding(
                         padding: const EdgeInsets.only(top: 16, bottom: 16),
                         child: Text(
-                          currentPage == onboardContents.length - 1
-                              ? "Get Started"
-                              : "Continue",
+                          "Get Started",
                           style: TextStyle(
-                            fontFamily: 'Roboto',
-                            color: Color(0xff21252c),
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
+                              fontFamily: 'Roboto',
+                              color: Color(0xffEFF1F4),
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600),
                         ),
                       ),
                       style: ButtonStyle(
-                        shape:
-                        MaterialStateProperty.all<RoundedRectangleBorder>(
-                          RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                          shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                            RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                           ),
-                        ),
-                        backgroundColor: MaterialStateProperty.all<Color>(
-                          btnBgColor,
+                          backgroundColor: MaterialStateProperty.all<Color>(
+                              btnBgColor)),
+                    ),
+                  )
+                      : SizedBox(
+                    width: 335,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        pageController.animateToPage(currentPage + 1,
+                            duration: Duration(milliseconds: 200),
+                            curve: Curves.fastEaseInToSlowEaseOut);
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 16, bottom: 16),
+                        child: Text(
+                          "Continue",
+                          style: TextStyle(
+                              fontFamily: 'Roboto',
+                              color: Color(0xffEFF1F4),
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600),
                         ),
                       ),
+                      style: ButtonStyle(
+                          shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                            RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          backgroundColor: MaterialStateProperty.all<Color>(
+                              btnBgColor)),
                     ),
-                  ),
+                  )
                 ],
               ),
             ),
@@ -196,25 +212,23 @@ class _OnboardingState extends State<Onboarding> {
                 padding: const EdgeInsets.only(bottom: 40.0),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: List<Widget>.generate(onboardContents.length,
-                          (index) {
-                        return AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          height: 4,
-                          width: (index == currentPage) ? 30 : 20,
-                          margin: const EdgeInsets.symmetric(horizontal: 5),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(5),
-                            color: (index == currentPage)
-                                ? const Color(0xFFEFF1F4)
-                                : const Color(0xff2b303a),
-                          ),
-                        );
-                      }),
+                  children: List<Widget>.generate(onboardContents.length, (index) {
+                    return AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      height: 4,
+                      width: (index == currentPage) ? 30 : 20,
+                      margin: const EdgeInsets.symmetric(horizontal: 5),
+                      decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(5),
+                          color: (index == currentPage)
+                              ? const Color(0xFFEFF1F4)
+                              : const Color(0xff2b303a)),
+                    );
+                  }),
                 ),
-              ),
+              )
             ],
-          ),
+          )
         ],
       ),
     );

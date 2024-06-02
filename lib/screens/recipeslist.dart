@@ -51,33 +51,33 @@ class _RecipesListState extends State<RecipesList> {
         backgroundColor: Color(121221),
         iconTheme: IconThemeData(color: Colors.white),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text(
-              'Recipes List',
-              style: TextStyle(fontSize: 24,color: Colors.white,fontFamily: "Roboto"),
-            ),
-            SizedBox(height: 20),
-            Text(
-              'Select the recipe for instructions:',
-              style: TextStyle(fontSize: 16,color: Colors.white,fontFamily: "Roboto"),
-            ),
-            SizedBox(height: 10),
-            Expanded(
-              child: ListView.builder(
-                itemCount: searchResults.length,
-                itemBuilder: (context, index) {
-                  return ListTile(
-                    title: Text(
-                      searchResults[index],
-                      style: TextStyle(fontSize: 16,color: Colors.white,fontFamily: "Roboto"),
-                    ),
-                    trailing: IconButton(
-                      icon: Icon(Icons.book,color: Colors.white),
-                      onPressed: () {
-                        // Navigate to the Instructions screen and pass v
+      body: Container(
+        decoration: BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage("assets/images/wave-haikei.png"),
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Text(
+                'Recipes List',
+                style: TextStyle(fontSize: 24,color: Colors.white,fontFamily: "Roboto"),
+              ),
+              SizedBox(height: 20),
+              Text(
+                'Select the recipe for instructions:',
+                style: TextStyle(fontSize: 16,color: Colors.white,fontFamily: "Roboto"),
+              ),
+              SizedBox(height: 10),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: searchResults.length,
+                  itemBuilder: (context, index) {
+                    return InkWell(
+                      onTap: (){
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -85,12 +85,22 @@ class _RecipesListState extends State<RecipesList> {
                           ),
                         );
                       },
-                    ),
-                  );
-                },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: ListTile(
+                          title: Text(
+                            searchResults[index],
+                            style: TextStyle(fontSize: 16,color: Colors.white,fontFamily: "Roboto"),
+                          ),
+                          trailing: Icon(Icons.book,color: Colors.white),
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

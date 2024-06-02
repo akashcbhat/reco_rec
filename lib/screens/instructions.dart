@@ -3,11 +3,46 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:csv/csv.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
-class Instructions extends StatelessWidget {
+class Instructions extends StatefulWidget {
   final String v;
-  final FlutterTts flutterTts = FlutterTts();
 
   Instructions({required this.v});
+
+  @override
+  _InstructionsState createState() => _InstructionsState();
+}
+
+class _InstructionsState extends State<Instructions>
+    with SingleTickerProviderStateMixin {
+  final FlutterTts flutterTts = FlutterTts();
+  bool isSpeaking = false;
+  late AnimationController _controller;
+  late Animation<Color?> _colorTween;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(seconds: 1),
+      vsync: this,
+    );
+    _colorTween = _controller.drive(
+      ColorTween(begin: Colors.blue, end: Colors.red),
+    );
+    _controller.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        _controller.reverse();
+      } else if (status == AnimationStatus.dismissed) {
+        _controller.forward();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,13 +50,10 @@ class Instructions extends StatelessWidget {
       future: _fetchRecipeData(),
       builder: (BuildContext context, AsyncSnapshot<List<dynamic>> snapshot) {
         if (snapshot.hasData) {
-          // Parse the CSV data and find the matching recipe
           final recipe = _findRecipe(snapshot.data!);
           if (recipe != null) {
             return WillPopScope(
-              // Intercept when user tries to navigate back
               onWillPop: () async {
-                // Stop TTS when user navigates back
                 await flutterTts.stop();
                 return true;
               },
@@ -29,8 +61,8 @@ class Instructions extends StatelessWidget {
                 backgroundColor: Color(121221),
                 appBar: AppBar(
                   title: Text('Instructions',
-                      style:
-                          TextStyle(color: Colors.white, fontFamily: "Roboto")),
+                      style: TextStyle(
+                          color: Colors.white, fontFamily: "Roboto")),
                   backgroundColor: Color(121221),
                   iconTheme: IconThemeData(color: Colors.white),
                 ),
@@ -48,7 +80,7 @@ class Instructions extends StatelessWidget {
                       ),
                       SizedBox(height: 20),
                       Text(
-                        'Preparation Time: ${recipe[3]}', // Assuming preparation time is in the second column
+                        'Preparation Time: ${recipe[3]}',
                         style: TextStyle(
                             fontSize: 18,
                             color: Colors.white,
@@ -56,7 +88,7 @@ class Instructions extends StatelessWidget {
                       ),
                       SizedBox(height: 20),
                       Text(
-                        'Cooking Time: ${recipe[4]}', // Assuming cooking time is in the third column
+                        'Cooking Time: ${recipe[4]}',
                         style: TextStyle(
                             fontSize: 18,
                             color: Colors.white,
@@ -75,8 +107,7 @@ class Instructions extends StatelessWidget {
                         padding: const EdgeInsets.only(left: 18.0, right: 18.0),
                         child: Text(
                           'Ingredients: ${recipe[6]}',
-                          textAlign: TextAlign
-                              .justify, // Assuming ingredients are in the fourth column
+                          textAlign: TextAlign.justify,
                           style: TextStyle(
                               fontSize: 15,
                               color: Colors.white,
@@ -88,8 +119,7 @@ class Instructions extends StatelessWidget {
                         padding: const EdgeInsets.only(left: 18.0, right: 18.0),
                         child: Text(
                           'Instructions: ${recipe[7]}',
-                          textAlign: TextAlign
-                              .justify, // Assuming instructions are in the fifth column
+                          textAlign: TextAlign.justify,
                           style: TextStyle(
                               fontSize: 15,
                               color: Colors.white,
@@ -97,20 +127,34 @@ class Instructions extends StatelessWidget {
                         ),
                       ),
                       SizedBox(height: 20),
-                      ElevatedButton(
-                        style: ButtonStyle(
-                          backgroundColor: MaterialStateProperty.all<Color>(
-                              Color(0xFF2D3B80)),
-                        ),
-                        onPressed: () async {
-                          // Speak out the text contents of the screen
-                          await _speakInstructions(recipe[7]);
+                      AnimatedBuilder(
+                        animation: _controller,
+                        builder: (context, child) {
+                          return ElevatedButton(
+                            style: ButtonStyle(
+                              backgroundColor:
+                              MaterialStateProperty.all(_colorTween.value),
+                            ),
+                            onPressed: isSpeaking
+                                ? null
+                                : () async {
+                              setState(() {
+                                isSpeaking = true;
+                              });
+                              _controller.forward();
+                              await _speakInstructions(recipe[7]);
+                              _controller.stop();
+                              setState(() {
+                                isSpeaking = false;
+                              });
+                            },
+                            child: Text(
+                              'Read Instructions',
+                              style: TextStyle(
+                                  color: Colors.white, fontFamily: "Roboto"),
+                            ),
+                          );
                         },
-                        child: Text(
-                          'Read Instructions',
-                          style: TextStyle(
-                              color: Colors.white, fontFamily: "Roboto"),
-                        ),
                       ),
                     ],
                   ),
@@ -163,20 +207,25 @@ class Instructions extends StatelessWidget {
   }
 
   List<dynamic>? _findRecipe(List<dynamic> data) {
-    // Assuming the first column contains the recipe names
-    int rowIndex = data.indexWhere((row) => row[2] == v);
+    int rowIndex = data.indexWhere((row) => row[2] == widget.v);
     return rowIndex != -1 ? data[rowIndex] : null;
   }
 
   Future<void> _speakInstructions(String instructions) async {
     try {
-      // Set TTS engine properties
       await flutterTts.setLanguage("en-IN");
-      await flutterTts.setPitch(0.9); // Increase pitch for a higher voice
-      await flutterTts.setSpeechRate(0.5); // Adjust speaking rate
-      await flutterTts.setVolume(1.0); // Set volume to maximum
+      await flutterTts.setPitch(0.9);
+      await flutterTts.setSpeechRate(0.5);
+      await flutterTts.setVolume(1.0);
+      await flutterTts.setVoice({"name": "en-in-x-ene-network", "locale": "en-IN"});
 
-      // Speak the instructions
+      flutterTts.setCompletionHandler(() {
+        _controller.stop();
+        setState(() {
+          isSpeaking = false;
+        });
+      });
+
       await flutterTts.speak(instructions);
     } catch (e) {
       print("Error while speaking instructions: $e");

@@ -5,7 +5,7 @@
     <!-- Add the WAKE_LOCK permission if needed -->
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
     <application
-        android:label="reco_rec"
+        android:label="RecoRec"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:enableOnBackInvokedCallback="true">
