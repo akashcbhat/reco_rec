@@ -27,7 +27,7 @@ class _ImagePickerDemoState extends State<ImagePickerDemo> {
 
   loadmodel() async {
     await Tflite.loadModel(
-      model: "assets/ingredient_recognition_mobile_model.tflite",
+      model: "assets/model_unquant.tflite",
       labels: "assets/ingredient_labels.txt",
     );
   }
@@ -57,7 +57,7 @@ class _ImagePickerDemoState extends State<ImagePickerDemo> {
     int startTime = new DateTime.now().millisecondsSinceEpoch;
     var recognitions = await Tflite.runModelOnImage(
       path: image.path,
-      numResults: 6,
+      numResults: 5,
       threshold: 0.05,
       imageMean: 127.5,
       imageStd: 127.5,
