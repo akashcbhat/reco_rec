@@ -33,9 +33,40 @@ class _ImagePickerDemoState extends State<ImagePickerDemo> {
   }
 
   Future<void> _pickImage() async {
+    await showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return Container(
+          child: Wrap(
+            children: <Widget>[
+              ListTile(
+                splashColor: Color(0xFF2D3B80),
+                leading: Icon(Icons.photo_library),
+                title: Text('Pick Image from Gallery',style: TextStyle(fontFamily: "Roboto")),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _getImage(ImageSource.gallery);
+                },
+              ),
+              ListTile(
+                splashColor: Color(0xFF2D3B80),
+                leading: Icon(Icons.camera_alt),
+                title: Text('Take Picture',style: TextStyle(fontFamily: "Roboto")),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _getImage(ImageSource.camera);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _getImage(ImageSource source) async {
     try {
-      final XFile? image =
-      await _picker.pickImage(source: ImageSource.gallery);
+      final XFile? image = await _picker.pickImage(source: source);
       setState(() {
         _image = image;
         file = File(image!.path);
@@ -53,6 +84,27 @@ class _ImagePickerDemoState extends State<ImagePickerDemo> {
     );
   }
 
+  void _showMessage(BuildContext context, String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Notice', style: TextStyle(fontFamily: "Roboto")),
+          content: Text(message, style: TextStyle(fontFamily: "Roboto")),
+          backgroundColor: Colors.white,
+          actions: <Widget>[
+            TextButton(
+              child: Text('Sure!', style: TextStyle(fontFamily: "Roboto")),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Future detectimage(File image) async {
     int startTime = new DateTime.now().millisecondsSinceEpoch;
     var recognitions = await Tflite.runModelOnImage(
@@ -67,7 +119,6 @@ class _ImagePickerDemoState extends State<ImagePickerDemo> {
     recognitions!.where((res) => res['confidence'] > 0.5).toList();
 
     setState(() {
-
       if (highConfidenceRecognitions.isEmpty) {
         v = "Ambiguity in Image";
         _recognitions = [];
@@ -84,7 +135,7 @@ class _ImagePickerDemoState extends State<ImagePickerDemo> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor:  Color(121221),
+      backgroundColor: Color(121221),
       appBar: AppBar(
         title: Text(
           "Welcome!",
@@ -136,7 +187,7 @@ class _ImagePickerDemoState extends State<ImagePickerDemo> {
                 ),
                 onPressed: _pickImage,
                 child: Text(
-                  'Pick Image from Gallery',
+                  'Pick Image',
                   style: TextStyle(fontFamily: "Roboto", color: Colors.white),
                 ),
               ),
@@ -152,7 +203,14 @@ class _ImagePickerDemoState extends State<ImagePickerDemo> {
                   backgroundColor:
                   MaterialStateProperty.all<Color>(Color(0xFF2D3B80)),
                 ),
-                onPressed: (_image != null && v != "Ambiguity in Image") ? () => _openRecipes(context, v) : null,
+                onPressed: (){
+                  if (_image != null && v!= "Ambiguity in Image") {
+                    _openRecipes(context, v);
+                  } else {
+                    _showMessage(context, "Hey!, Kindly pick an image for recipes...");
+                  }
+
+                },
                 // Disable the button if _image is null or if v is "Ambiguity in Image"
                 child: Text(
                   "Open Recipes",
